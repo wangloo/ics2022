@@ -50,4 +50,6 @@ static inline bool difftest_check_reg(const char *name, vaddr_t pc, word_t ref, 
   return true;
 }
 
+bool check_wp(void);
+
 #endif

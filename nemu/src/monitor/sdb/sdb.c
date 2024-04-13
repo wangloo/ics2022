@@ -17,6 +17,9 @@
 #include <cpu/cpu.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <memory/paddr.h>
+#include <stdio.h>
+#include "common.h"
 #include "sdb.h"
 
 static int is_batch_mode = false;
@@ -47,8 +50,110 @@ static int cmd_c(char *args) {
   return 0;
 }
 
+static int
+cmd_info(char *args)
+{
+  char *infowhat = args;
+  
+  if (!infowhat) {
+    printf("Info what?\n");
+    return -1;
+  }
+  Log("infowhat: %s\n",infowhat);
+  switch (*infowhat)
+  {
+  case 'r':
+    isa_reg_display();
+    break;
+  case 'w':
+    display_wp();
+    break;
+  default:
+    TODO();
+    break;
+  }
+  return 0;
+}
+
+static int
+cmd_si(char *args)
+{
+  int n = 1;
+
+  if (args)
+    sscanf(args, "%d", &n);
+  cpu_exec(n);
+  return 0;
+}
+
+static int
+cmd_x(char *args)
+{
+  char *arg;
+  int n;
+  bool expr_ok = true;
+  paddr_t gaddr;
+  
+  arg = strtok(NULL, " ");
+  sscanf(arg, "%d", &n);
+  arg = arg + strlen(arg) + 1;
+  gaddr = expr(arg, &expr_ok);
+  if (!expr_ok) {
+    Log("expr() failed!\n");
+    return -1;
+  }
+  // Log("n: %d, guest addr: 0x%x\n", n, gaddr);
+
+  for (; n > 0; n--) {
+    printf("(0x%x): 0x%x\n", 
+      gaddr, *( (paddr_t *)guest_to_host(gaddr) )
+      );
+    gaddr += 4;
+  }
+  return 0;
+}
+
+static int
+cmd_w(char *args)
+{
+  int NO;
+  char *expr;
+
+  expr = strtok(NULL, " ");
+  assert(expr);
+  if ((NO = new_wp(expr)) < 0)
+    return -1;
+  Log("new watchpoints [%d]: %s\n", NO, expr);
+  return 0;
+}
+
+static int
+cmd_d(char *args)
+{
+  int NO;
+  char *arg;
+
+  arg = strtok(NULL, " ");
+  assert(arg);
+  sscanf(arg, "%d", &NO);
+  free_wp(NO);
+  return 0;
+}
+
+static int
+cmd_e(char *args)
+{
+  word_t result;
+  bool success;
+
+  result = expr(args, &success);
+  assert(success == true);
+  Log("Expr %s = (%d)\n", args, result);
+  return 0;
+}
 
 static int cmd_q(char *args) {
+  nemu_state.state = NEMU_QUIT;
   return -1;
 }
 
@@ -61,6 +166,14 @@ static struct {
 } cmd_table [] = {
   { "help", "Display information about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
+  ///////// PA1-part1 start
+  { "si", "Single step", cmd_si},
+  { "info", "Show registers or watchpoints", cmd_info},
+  { "x", "Exam memory", cmd_x},
+  { "w", "Add watchpoint", cmd_w},
+  { "d", "Delete watchpoint", cmd_d},
+  ///////// PA1-part1 end
+  { "e", "expr caculation", cmd_e}, // For debug NEMU
   { "q", "Exit NEMU", cmd_q },
 
   /* TODO: Add more commands */
