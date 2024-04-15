@@ -52,6 +52,8 @@ app: $(BINARY)
 $(BINARY):: $(OBJS) $(ARCHIVES)
 	@echo + LD $@
 	@$(LD) -o $@ $(OBJS) $(LDFLAGS) $(ARCHIVES) $(LIBS)
+	@echo + OBJDUMP $@
+	@objdump -S $@ > $@.dump
 
 clean:
 	-rm -rf $(BUILD_DIR)
