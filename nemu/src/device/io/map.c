@@ -52,6 +52,7 @@ void init_map() {
   p_space = io_space;
 }
 
+// 访问addr在map中对应的映射空间
 word_t map_read(paddr_t addr, int len, IOMap *map) {
   assert(len >= 1 && len <= 8);
   check_bound(map, addr);
