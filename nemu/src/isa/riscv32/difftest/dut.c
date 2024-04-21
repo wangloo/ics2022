@@ -19,10 +19,23 @@
 #include "macro.h"
 
 #define RET_FALSE_IF_NEQ(a, b) do {if (a!=b) { Log("REG: %x, DUT: %x\n", a, b); return false;}}while(0)
+
+#define CHECK_DIFF(a, b, name) \
+  do { \
+    if (a != b) { \
+      printf("Check %s false(REF: %x, DUT: %x)\n", name, a, b); \
+      return false; \
+    }}while(0);
+
+#define CHECK_EQ(a, b) 
 bool isa_difftest_checkregs(CPU_state *ref_r, vaddr_t pc) {
-  RET_FALSE_IF_NEQ(ref_r->pc, cpu.pc);
+  CHECK_DIFF(ref_r->csr.mtvec, cpu.csr.mtvec, "mtvec");
+  CHECK_DIFF(ref_r->pc, cpu.pc, "pc");
+  // CHECK_DIFF(ref_r->csr.mstatus.val, cpu.csr.mstatus.val, "mstatus");
+  CHECK_DIFF(ref_r->csr.mcause, cpu.csr.mcause, "mcause");
+  CHECK_DIFF(ref_r->csr.mepc, cpu.csr.mepc, "mepc");
   for (int i=0; i < ARRLEN(ref_r->gpr); i++) {
-    RET_FALSE_IF_NEQ(ref_r->gpr[i], gpr(i));
+    CHECK_DIFF(ref_r->gpr[i], gpr(i), reg_name(i));
   }
   return true;
 }

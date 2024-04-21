@@ -8,6 +8,11 @@ Context* __am_irq_handle(Context *c) {
   if (user_handler) {
     Event ev = {0};
     switch (c->mcause) {
+      // mcause 与 event 的关系：
+      // mcause是硬件的异常原因描述，11对应M模式环境调用，
+      // 即执行yield()的场景；而event是软件定义的事件，
+      // 所以在这里将硬件和软件进行映射。
+      case 11: ev.event = EVENT_YIELD; break;
       default: ev.event = EVENT_ERROR; break;
     }
 
